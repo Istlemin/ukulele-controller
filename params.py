@@ -4,7 +4,7 @@ import pyaudio
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
 samp_rate = 44100 # 44.1kHz sampling rate
-chunk = 44100//2 # samples for buffer (more samples = better freq resolution)
+chunk = 44100//5 # samples for buffer (more samples = better freq resolution)
 dev_index = 2 # device index found by p.get_device_info_by_index(ii)
 
 # mic sensitivity correction and bit conversion
