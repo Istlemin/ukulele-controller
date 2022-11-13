@@ -80,8 +80,8 @@ class Microphone:
         if result:
             prim_n, prim_a, _ = result[0]
             device.write(prim_n, prim_a)
-            print(notes)
-            print(result)
+            #print(notes)
+            #print(result)
         else:
             device.clear()
 

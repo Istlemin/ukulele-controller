@@ -22,13 +22,17 @@ class Song:
 class Tuning:
     def __init__(self,strings=[('G',4),('C',4),('E',4),('A',4)]):
         self.strings = strings
+        self.lowest = min(strings, key=note_to_num)
 
     def note_to_string(self,note):
-        best = (0,1e18)
-        for i in range(4):
+        best = (-1,1e18)
+        while note_to_num(note) < note_to_num(self.lowest):
+            note = (note[0],note[1] + 1)
+        for i in range(1,4):
             diff = note_diff(note,self.strings[i])
             if diff>=0 and diff<best[1]:
                 best = (i,diff)
+        #print(best)
         return best
 
 

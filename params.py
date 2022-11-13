@@ -19,4 +19,4 @@ low_freq_loc = np.argmin(np.abs(f_vec-mic_low_freq))
 # some peak-finding and noise preallocations
 peak_shift = 10
 noise_len = 5
-thresh = 0.0006
+thresh = 0.0004
