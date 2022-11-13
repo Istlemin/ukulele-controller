@@ -1,22 +1,22 @@
 import pyaudio
-import matplotlib.pyplot as plt
 import numpy as np
-import time
 from notes import *
 from params import *
+from keyboard import strum_to_key
+from ukulele import Tuning
 
 
 class Device:
     def __init__(self):
         self.state = None
+        self.tuning = Tuning()
 
     def write(self, note):
         self.state = note
-        print(note)
+        print(strum_to_key(self.tuning.note_to_string(note)))
 
     def clear(self):
         self.state = None
-        print()
 
     def get_state(self):
         return self.state
@@ -67,19 +67,20 @@ class Microphone:
         for _ in range(4):
             max_loc = np.argmax(peak_data[low_freq_loc:])
             peak_point = max_loc+low_freq_loc
+            freq = f_vec[peak_point]
             amplitude = peak_data[peak_point]
             if amplitude>max(10*np.mean(self.noise_amp), thresh):
-                note = to_note(peak_point)
-                notes.append((note, amplitude))
+                note = freq_to_note(freq)
+                notes.append((note, amplitude, freq))
                 # zero-out old peaks so we dont find them again
                 peak_data[peak_point-peak_shift:peak_point+peak_shift] = np.repeat(0,peak_shift*2)
         result = filter_notes(notes)
         if result:
             device.write(result[0])
+            print(notes)
+            print(result)
         else:
             device.clear()
-
-    
 
 if __name__ == "__main__":
     mic = Microphone()

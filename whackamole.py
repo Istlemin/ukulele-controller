@@ -6,6 +6,7 @@ import time
 from enum import Enum
 from ukulele import Song, Tuning
 from device import Microphone, Device
+import threading
 
 # --- Set up the constants
 
@@ -158,7 +159,7 @@ class MoleSong:
         self.tuning = tuning
         self.moles = moles
         
-        self.note_interval = 0.7
+        self.note_interval = 1
         self.note_interval_counter = self.note_interval
         self.note_index = 0
     
@@ -182,6 +183,12 @@ class UkuleleInput:
         self.tuning = tuning
 
         self.c = 0
+        thread = threading.Thread(target=self.run)
+        thread.start()
+
+    def run(self):
+        while True:
+            self.mic.tick(self.device)
 
     def update(self,delta_time):
         self.c+=1
@@ -190,10 +197,10 @@ class UkuleleInput:
     
     def get_note(self):
         note = self.device.get_state()
-        if note is not None:# and self.last==None:
+        if note is not None and self.last!=note:
             self.last = note
-            return self.tuning.note_to_string((note[:-1],int(note[-1])))
-        self.last = note
+            return self.tuning.note_to_string(note)
+        self.last = note       
 
 
 class MyGame(arcade.Window):
@@ -219,11 +226,11 @@ class MyGame(arcade.Window):
         #self.ukulele_input = UkuleleInput()
 
     def on_update(self, delta_time):
-        # self.ukulele_input.update(delta_time)
-        # inp = self.ukulele_input.get_note()
-        # if inp is not None:
-        #     print("INPUT! ", inp)
-        #     self.whack(*inp)
+        #self.ukulele_input.update(delta_time)
+        inp = self.ukulele_input.get_note()
+        if inp is not None:
+            print("INPUT! ", inp)
+            self.whack(*inp)
 
         self.song.update(delta_time)
         for mole in self.moles:
