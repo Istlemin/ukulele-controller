@@ -223,7 +223,7 @@ class MyGame(arcade.Window):
 
         self.song = MoleSong(self.moles, "songs/twinkletwinkle.song")
 
-        #self.ukulele_input = UkuleleInput()
+        self.ukulele_input = UkuleleInput()
 
     def on_update(self, delta_time):
         #self.ukulele_input.update(delta_time)
