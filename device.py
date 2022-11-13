@@ -13,7 +13,7 @@ class Device:
 
     def write(self, note):
         self.state = note
-        print(strum_to_key(self.tuning.note_to_string(note)))
+        #print(strum_to_key(self.tuning.note_to_string(note)))
 
     def clear(self):
         self.state = None
