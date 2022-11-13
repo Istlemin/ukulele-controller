@@ -6,6 +6,7 @@ import time
 from enum import Enum
 from ukulele import Song, Tuning
 from device import Microphone, Device
+import threading
 
 # --- Set up the constants
 
@@ -88,7 +89,7 @@ class Mole(Entity):
                     exit()
 
     def whack(self):
-        self.go_down_after = 2
+        self.go_down_after = 0.5
         return self.state==Mole.State.UP
 
     def draw(self):
@@ -106,7 +107,7 @@ class Mole(Entity):
 class Hammer:
     def __init__(self,pos,hit):
         self.pos = pos
-        self.lifetime = 2
+        self.lifetime = 0.5
         if hit:
             self.sprite = arcade.Sprite("resources/hammer_hit.png", 0.3)
             self.sprite.center_x = pos[0]+20
@@ -141,7 +142,7 @@ class MoleSong:
         self.tuning = tuning
         self.moles = moles
         
-        self.note_interval = 0.4
+        self.note_interval = 1
         self.note_interval_counter = self.note_interval
         self.note_index = 0
     
@@ -165,6 +166,12 @@ class UkuleleInput:
         self.tuning = tuning
 
         self.c = 0
+        thread = threading.Thread(target=self.run)
+        thread.start()
+
+    def run(self):
+        while True:
+            self.mic.tick(self.device)
 
     def update(self,delta_time):
         self.c+=1
@@ -173,7 +180,7 @@ class UkuleleInput:
     
     def get_note(self):
         note = self.device.get_state()
-        if note is not None:# and self.last==None:
+        if note is not None and self.last!=note:
             self.last = note
             return self.tuning.note_to_string((note[:-1],int(note[-1])))
         self.last = note       
@@ -202,7 +209,7 @@ class MyGame(arcade.Window):
         self.ukulele_input = UkuleleInput()
         
     def on_update(self, delta_time):
-        self.ukulele_input.update(delta_time)
+        #self.ukulele_input.update(delta_time)
         inp = self.ukulele_input.get_note()
         if inp is not None:
             print("INPUT! ", inp)
@@ -230,7 +237,7 @@ class MyGame(arcade.Window):
         if row*4+col>=len(self.moles):
             return
         mole = self.moles[row*4+col]
-        if mole.go_down_after>1000:
+        if mole.go_down_after<1000:
             return
         did_hit = mole.whack()
         self.hammers.append(Hammer(mole.pos,did_hit))

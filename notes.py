@@ -23,9 +23,10 @@ def to_note(freq):
     closest = min(note_map.keys(), key = lambda x:abs(x-freq))
     dist = abs(freq-closest)
     if dist/freq > 0.05:
+        print(freq, dist)
         return '?'
     return note_map[closest]
 
 def filter_notes(notes):
-    notes = [(n,a) for (n,a) in notes if n != '?']
-    return [n for (n,a) in notes]
+    notes = [(n,a,f) for (n,a,f) in notes if n != '?']
+    return [n for (n,a,f) in notes]
