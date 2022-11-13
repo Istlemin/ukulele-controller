@@ -30,4 +30,4 @@ def freq_to_note(freq):
 
 def filter_notes(notes):
     notes = [(n,a,f) for (n,a,f) in notes if n != '?']
-    return [n for (n,a,f) in notes]
+    return notes

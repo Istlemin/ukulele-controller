@@ -184,6 +184,7 @@ class UkuleleInput:
         self.mic = Microphone()
         self.device = Device()
         self.last = None
+        self.amplitude = None
         self.tuning = tuning
 
         self.c = 0
@@ -201,10 +202,13 @@ class UkuleleInput:
             self.mic.tick(self.device)
     
     def get_note(self):
-        note = self.device.get_state()
-        if note is not None and self.last!=note:
-            self.last = note
-            return self.tuning.note_to_string(note)
+        note, amplitude = self.device.get_state()
+        if note is not None:
+            if self.amplitude is None or amplitude > self.amplitude or self.last!=note:
+                self.last = note
+                self.amplitude = amplitude
+                return self.tuning.note_to_string(note)
+        self.amplitude = amplitude
         self.last = note       
 
 
@@ -226,7 +230,7 @@ class MyGame(arcade.Window):
 
         self.score = Score()
 
-        self.song = MoleSong(self.moles, "songs/twinkletwinkle.song")
+        self.song = MoleSong(self.moles, "songs/ode_to_joy.song")
 
         self.ukulele_input = UkuleleInput()
 

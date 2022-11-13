@@ -8,18 +8,20 @@ from ukulele import Tuning
 
 class Device:
     def __init__(self):
-        self.state = None
+        self.note = None
+        self.amplitude = None
         self.tuning = Tuning()
 
-    def write(self, note):
-        self.state = note
+    def write(self, note, amplitude):
+        self.note = note
+        self.amplitude = amplitude
         #print(strum_to_key(self.tuning.note_to_string(note)))
 
     def clear(self):
         self.state = None
 
     def get_state(self):
-        return self.state
+        return self.note, self.amplitude
 
 
 class Microphone:
@@ -76,7 +78,8 @@ class Microphone:
                 peak_data[peak_point-peak_shift:peak_point+peak_shift] = np.repeat(0,peak_shift*2)
         result = filter_notes(notes)
         if result:
-            device.write(result[0])
+            prim_n, prim_a, _ = result[0]
+            device.write(prim_n, prim_a)
             print(notes)
             print(result)
         else:

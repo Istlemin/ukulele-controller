@@ -96,7 +96,7 @@ while True:
         amplitude = peak_data[peak_point]
         if amplitude>max(10*np.mean(noise_amp), thresh):
             peaks.append(freq)
-            note = to_note(freq)
+            note = freq_to_note(freq)
             notes.append((note, amplitude, freq))
 
             if PLOT:
@@ -120,7 +120,7 @@ while True:
     # print(fft_data)
     # plt.show()
     if PLOT:
-        plt.pause(0.001)    
+        plt.pause(1)    
     # wait for user to okay the next loop (comment out to have continuous loop)
     # imp = input("Input 0 to Continue, or 1 to save figure ")
     # if PLOT and imp=='1':
