@@ -5,6 +5,7 @@ from typing import List
 import time
 from enum import Enum
 from ukulele import Song, Tuning
+from device import Microphone, Device
 
 # --- Set up the constants
 
@@ -33,7 +34,7 @@ class Mole(Entity):
         UP = 0
         DOWN = 1
         
-    def __init__(self,pos, rate=0.1, lifetime=3):
+    def __init__(self,pos, rate=0.1, lifetime=30):
         self.r=20
         self.pos = pos
         self.color = arcade.color.DARK_BROWN
@@ -156,6 +157,23 @@ class MoleSong:
                 self.moles[string*4+fret].go_up()
             self.note_index += 1
 
+class UkuleleInput:
+    def __init__(self):
+        self.mic = Microphone()
+        self.device = Device()
+        self.last = None
+
+    def update(self,delta_time):
+        self.mic.tick(self.device)
+    
+    def get_note(self):
+        note = self.device.get_state()
+        if note is not None and self.last==None:
+            self.last = note
+            return note
+        self.last = note       
+
+
 class MyGame(arcade.Window):
     """ Main application class. """
 
@@ -175,8 +193,16 @@ class MyGame(arcade.Window):
         self.score = Score()
 
         self.song = MoleSong(self.moles, "songs/twinkletwinkle.song")
+
+        self.ukulele_input = UkuleleInput()
         
     def on_update(self, delta_time):
+        self.ukulele_input.update(delta_time)
+        inp = self.ukulele_input.get_note()
+        if inp is not None:
+            print("INPUT! ", inp)
+            self.whack(inp)
+
         self.song.update(delta_time)
         for mole in self.moles:
             mole.update(delta_time)
