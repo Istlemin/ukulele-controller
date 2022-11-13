@@ -30,83 +30,100 @@ class Entity:
         pass
 
 class Mole(Entity):
-    class State(Enum):
-        UP = 0
-        DOWN = 1
-        
-    def __init__(self,pos, rate=0.1, lifetime=30):
-        self.r=20
-        self.pos = pos
-        self.color = arcade.color.DARK_BROWN
-        self.set_rate_lifetime(rate,lifetime)
-        self.go_down()
+    def __init__(self,pos,sprite_scale,lifetime=10):
+        self.pos = np.copy(pos)
 
-        sprite_scale = self.r*0.008
+        self.pos[0] += np.random.uniform(low=-10,high=10)
+
+        self.lifetime = lifetime
+        self.time_until_dead = -100
+
         self.mole_sprite = arcade.Sprite("resources/mole.png", sprite_scale)
-        self.grass_sprite = arcade.Sprite("resources/mole_grass.png", sprite_scale)
-        self.hole_sprite = arcade.Sprite("resources/mole_hole.png", sprite_scale)
-        self.mole_offset = 0
+        self.mole_offset = -50
+        
+        self.disappear_after = 1e18
+
+        self.whacked = False
+
+    def whack(self):
+        if self.disappear_after < 1000:
+            return
+        self.disappear_after = 0.3
+        self.whacked = True
+
+    def update(self,delta_time):
+        if self.time_until_dead == -100:
+            self.time_until_dead = self.lifetime
+            return True
+        self.time_until_dead -= delta_time
+        self.disappear_after -= delta_time
+
+        if self.disappear_after<0:
+            return False
+            
+        self.disappear_after -= delta_time
+        self.mole_offset += delta_time*200
+        self.mole_offset = min(self.mole_offset,0)
+        if self.disappear_after>1000:
+            self.time_until_dead -= delta_time
+        if self.time_until_dead<0:      
+            print("Dead!")
+            time.sleep(1)
+            exit()
+
+        return True
+
+    def draw(self):
+        self.mole_sprite.center_x = self.pos[0]
+        self.mole_sprite.center_y = self.pos[1]+self.mole_offset
+        c = int(255*self.time_until_dead/self.lifetime)
+        self.mole_sprite.color = (255,c,c)
+        self.mole_sprite.draw()
+        arcade.draw_rectangle_filled(self.pos[0],self.pos[1]-65,70,60,BACKGROUND_COLOR)
+
+class MoleHole(Entity):
+        
+    def __init__(self,pos, rate=0.1):
+        self.r=20
+        self.pos = np.copy(pos)
+        self.color = arcade.color.DARK_BROWN
+
+        self.sprite_scale = self.r*0.008
+        self.hole_sprite = arcade.Sprite("resources/mole_hole.png", self.sprite_scale)
+        self.grass_sprite = arcade.Sprite("resources/mole_grass.png", self.sprite_scale)
 
         self.hole_sprite.center_x = self.pos[0]
         self.hole_sprite.center_y = self.pos[1]
         self.grass_sprite.center_x = self.pos[0]
         self.grass_sprite.center_y = self.pos[1]
 
-    def go_down(self):
-        self.go_down_after = 1e18
-        self.state = Mole.State.DOWN
-        self.time_until_up = np.random.exponential(1/self.rate)
+        self.moles = []
 
-    def go_up(self):
-        self.state = Mole.State.UP
-        self.time_until_dead = self.lifetime
-        self.mole_offset = -50
-        self.go_down_after = 1e18
-
-    def set_rate_lifetime(self,rate,lifetime):
-        self.rate = rate
-        self.lifetime = lifetime
+    def new_mole(self):
+        self.moles.append(Mole(self.pos,self.sprite_scale))
 
     def update(self, delta_time):
-        match self.state:
-            case Mole.State.DOWN:
-                self.time_until_up -= delta_time
-                if self.time_until_up<0:
-                    self.go_up()
-            case Mole.State.UP:
-                if self.go_down_after<0:
-                    self.go_down()
-                    return
-                self.go_down_after -= delta_time
-                self.mole_offset += delta_time*200
-                self.mole_offset = min(self.mole_offset,0)
-                if self.go_down_after>1000:
-                    self.time_until_dead -= delta_time
-                if self.time_until_dead<0:      
-                    print("Dead!")
-                    time.sleep(1)
-                    exit()
-
+        self.moles = [mole for mole in self.moles if mole.update(delta_time)]
+                
     def whack(self):
-        self.go_down_after = 2
-        return self.state==Mole.State.UP
+        for mole in self.moles:
+            if not mole.whacked:
+                mole.whack()
+                return True
+        return False
 
     def draw(self):
         self.hole_sprite.draw()
         
-        if self.state==Mole.State.UP:
-                self.mole_sprite.center_x = self.pos[0]
-                self.mole_sprite.center_y = self.pos[1]+self.mole_offset
-                c = int(255*self.time_until_dead/self.lifetime)
-                self.mole_sprite.color = (255,c,c)
-                self.mole_sprite.draw()
-                arcade.draw_rectangle_filled(self.pos[0],self.pos[1]-65,70,60,BACKGROUND_COLOR)
+        for mole in self.moles:
+            mole.draw()
+
         self.grass_sprite.draw()
 
 class Hammer:
     def __init__(self,pos,hit):
         self.pos = pos
-        self.lifetime = 2
+        self.lifetime = 0.5
         if hit:
             self.sprite = arcade.Sprite("resources/hammer_hit.png", 0.3)
             self.sprite.center_x = pos[0]+20
@@ -136,12 +153,12 @@ class Score:
 Collision = namedtuple("Collision", "pos normal")
 
 class MoleSong:
-    def __init__(self,moles : List[Mole], path,tuning=Tuning()):
+    def __init__(self,moles : List[MoleHole], path,tuning=Tuning()):
         self.song = Song(path)
         self.tuning = tuning
         self.moles = moles
         
-        self.note_interval = 0.4
+        self.note_interval = 0.7
         self.note_interval_counter = self.note_interval
         self.note_index = 0
     
@@ -154,7 +171,7 @@ class MoleSong:
             note = self.song.notes[self.note_index]
             if note is not None:
                 string,fret = self.tuning.note_to_string(note)
-                self.moles[string*4+fret].go_up()
+                self.moles[string*4+fret].new_mole()
             self.note_index += 1
 
 class UkuleleInput:
@@ -176,7 +193,7 @@ class UkuleleInput:
         if note is not None:# and self.last==None:
             self.last = note
             return self.tuning.note_to_string((note[:-1],int(note[-1])))
-        self.last = note       
+        self.last = note
 
 
 class MyGame(arcade.Window):
@@ -187,8 +204,8 @@ class MyGame(arcade.Window):
 
         self.background_color = BACKGROUND_COLOR
         margin = 100
-        self.moles : List[Mole] = [
-            Mole(Vec(x,y) + np.random.uniform(low=-30,high=30),rate=0.000001)
+        self.moles : List[MoleHole] = [
+            MoleHole(Vec(x,y) + np.random.uniform(low=-30,high=30),rate=0.000001)
             for y in np.linspace(margin,height-margin,4)
             for x in np.linspace(margin,width-margin,4)
         ]
@@ -199,14 +216,14 @@ class MyGame(arcade.Window):
 
         self.song = MoleSong(self.moles, "songs/twinkletwinkle.song")
 
-        self.ukulele_input = UkuleleInput()
-        
+        #self.ukulele_input = UkuleleInput()
+
     def on_update(self, delta_time):
-        self.ukulele_input.update(delta_time)
-        inp = self.ukulele_input.get_note()
-        if inp is not None:
-            print("INPUT! ", inp)
-            self.whack(*inp)
+        # self.ukulele_input.update(delta_time)
+        # inp = self.ukulele_input.get_note()
+        # if inp is not None:
+        #     print("INPUT! ", inp)
+        #     self.whack(*inp)
 
         self.song.update(delta_time)
         for mole in self.moles:
@@ -230,8 +247,6 @@ class MyGame(arcade.Window):
         if row*4+col>=len(self.moles):
             return
         mole = self.moles[row*4+col]
-        if mole.go_down_after>1000:
-            return
         did_hit = mole.whack()
         self.hammers.append(Hammer(mole.pos,did_hit))
 
