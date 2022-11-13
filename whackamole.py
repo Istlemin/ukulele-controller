@@ -88,7 +88,7 @@ class Mole(Entity):
                     exit()
 
     def whack(self):
-        self.go_down_after = 0.5
+        self.go_down_after = 2
         return self.state==Mole.State.UP
 
     def draw(self):
@@ -106,7 +106,7 @@ class Mole(Entity):
 class Hammer:
     def __init__(self,pos,hit):
         self.pos = pos
-        self.lifetime = 0.5
+        self.lifetime = 2
         if hit:
             self.sprite = arcade.Sprite("resources/hammer_hit.png", 0.3)
             self.sprite.center_x = pos[0]+20
@@ -158,19 +158,24 @@ class MoleSong:
             self.note_index += 1
 
 class UkuleleInput:
-    def __init__(self):
+    def __init__(self, tuning:Tuning = Tuning()):
         self.mic = Microphone()
         self.device = Device()
         self.last = None
+        self.tuning = tuning
+
+        self.c = 0
 
     def update(self,delta_time):
-        self.mic.tick(self.device)
+        self.c+=1
+        if self.c%5==0:
+            self.mic.tick(self.device)
     
     def get_note(self):
         note = self.device.get_state()
-        if note is not None and self.last==None:
+        if note is not None:# and self.last==None:
             self.last = note
-            return note
+            return self.tuning.note_to_string((note[:-1],int(note[-1])))
         self.last = note       
 
 
@@ -201,7 +206,7 @@ class MyGame(arcade.Window):
         inp = self.ukulele_input.get_note()
         if inp is not None:
             print("INPUT! ", inp)
-            self.whack(inp)
+            self.whack(*inp)
 
         self.song.update(delta_time)
         for mole in self.moles:
@@ -222,6 +227,8 @@ class MyGame(arcade.Window):
         self.score.draw()
     
     def whack(self,row,col):
+        if row*4+col>=len(self.moles):
+            return
         mole = self.moles[row*4+col]
         did_hit = mole.whack()
         self.hammers.append(Hammer(mole.pos,did_hit))
