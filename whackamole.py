@@ -230,6 +230,8 @@ class MyGame(arcade.Window):
         if row*4+col>=len(self.moles):
             return
         mole = self.moles[row*4+col]
+        if mole.go_down_after>1000:
+            return
         did_hit = mole.whack()
         self.hammers.append(Hammer(mole.pos,did_hit))
 
