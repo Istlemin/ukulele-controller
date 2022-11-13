@@ -45,13 +45,14 @@ class Mole(Entity):
         self.disappear_after = 1e18
 
         self.whacked = False
+        self.died = False
 
     def whack(self):
         if self.disappear_after < 1000:
             return
         self.disappear_after = 0.3
         self.whacked = True
-        self.died = False
+        
 
     def update(self,delta_time):
         if self.time_until_dead == -100:
@@ -107,7 +108,7 @@ class MoleHole(Entity):
         self.moles = [mole for mole in self.moles if mole.update(delta_time)]
 
     def died(self):
-        return any([mole.died() for mole in self.moles])
+        return any([mole.died for mole in self.moles])
 
     def whack(self):
         for mole in self.moles:
