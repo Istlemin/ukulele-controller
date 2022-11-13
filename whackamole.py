@@ -182,7 +182,7 @@ class UkuleleInput:
         note = self.device.get_state()
         if note is not None and self.last!=note:
             self.last = note
-            return self.tuning.note_to_string((note[:-1],int(note[-1])))
+            return self.tuning.note_to_string(note)
         self.last = note       
 
 

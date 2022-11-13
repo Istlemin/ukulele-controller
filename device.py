@@ -2,15 +2,18 @@ import pyaudio
 import numpy as np
 from notes import *
 from params import *
+from keyboard import strum_to_key
+from ukulele import Tuning
 
 
 class Device:
     def __init__(self):
         self.state = None
+        self.tuning = Tuning()
 
     def write(self, note):
         self.state = note
-        print(note)
+        print(strum_to_key(self.tuning.note_to_string(note)))
 
     def clear(self):
         self.state = None
@@ -67,7 +70,7 @@ class Microphone:
             freq = f_vec[peak_point]
             amplitude = peak_data[peak_point]
             if amplitude>max(10*np.mean(self.noise_amp), thresh):
-                note = to_note(freq)
+                note = freq_to_note(freq)
                 notes.append((note, amplitude, freq))
                 # zero-out old peaks so we dont find them again
                 peak_data[peak_point-peak_shift:peak_point+peak_shift] = np.repeat(0,peak_shift*2)
