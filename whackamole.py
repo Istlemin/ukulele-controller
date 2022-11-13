@@ -51,6 +51,7 @@ class Mole(Entity):
             return
         self.disappear_after = 0.3
         self.whacked = True
+        self.died = False
 
     def update(self,delta_time):
         if self.time_until_dead == -100:
@@ -68,9 +69,8 @@ class Mole(Entity):
         if self.disappear_after>1000:
             self.time_until_dead -= delta_time
         if self.time_until_dead<0:      
-            print("Dead!")
-            time.sleep(1)
-            exit()
+            self.died = True
+            return True
 
         return True
 
@@ -105,7 +105,10 @@ class MoleHole(Entity):
 
     def update(self, delta_time):
         self.moles = [mole for mole in self.moles if mole.update(delta_time)]
-                
+
+    def died(self):
+        return any([mole.died() for mole in self.moles])
+
     def whack(self):
         for mole in self.moles:
             if not mole.whacked:
@@ -183,11 +186,12 @@ class UkuleleInput:
         self.tuning = tuning
 
         self.c = 0
-        thread = threading.Thread(target=self.run)
-        thread.start()
+        self.should_run=True
+        self.thread = threading.Thread(target=self.run)
+        self.thread.start()
 
     def run(self):
-        while True:
+        while self.should_run:
             self.mic.tick(self.device)
 
     def update(self,delta_time):
@@ -240,6 +244,10 @@ class MyGame(arcade.Window):
             hammer.update(delta_time)
         
         self.hammers = [hammer for hammer in self.hammers if hammer.lifetime>0]
+
+        if any(mole.died() for mole in self.moles):
+            self.ukulele_input.should_run=False
+            exit()
 
     def on_draw(self):
         entities = self.moles[::-1] + self.hammers
